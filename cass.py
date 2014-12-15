@@ -1,11 +1,36 @@
 from datetime import datetime
 from uuid import uuid1, UUID
+from urlparse import urlsplit
+from StringIO import StringIO
+import json
+import os
 import random
 
+from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 
-cluster = Cluster(['127.0.0.1'])
-session = cluster.connect('twissandra')
+keyspace = None
+
+def cassandra():
+    global keyspace
+    vcap = os.environ['VCAP_SERVICES']
+    if not vcap:
+        keyspace = 'twissandra'
+        return Cluster(['127.0.0.1']).connect(keyspace)
+    j = json.load(StringIO(vcap))
+    for provider in j:
+        for service in j[provider]:
+            if 'credentials' in service:
+                c = service['credentials']
+                if 'uri' in c:
+                    uri = c['uri']
+                    if uri.startswith('cassandra:'):
+                        keyspace = urlsplit(uri).path[1:]
+                        auth = PlainTextAuthProvider(c['username'], c['password']) if 'username' in c and 'password' in c else None
+                        return Cluster([c['host']], c['port'], auth_provider=auth).connect(keyspace)
+    raise Exception('No Cassandra service bound to application')
+
+session = cassandra()
 
 # Prepared statements, reuse as much as possible by binding new values
 tweets_query = None

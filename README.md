@@ -20,6 +20,8 @@ install the project:
 3. Create a virtual Python environment with Twissandra's dependencies
 4. Start up the webserver
 
+Please see [below](#deployment-to-cloudfoundry) for steps to deploy Twissandra to [CloudFoundry](http://www.cloudfoundry.org/).
+
 ### Check out the Twissandra source code
 
     git clone git://github.com/twissandra/twissandra.git
@@ -71,6 +73,21 @@ This is the fun part! We're done setting everything up, we just need to run it:
     python manage.py runserver
 
 Now go to http://127.0.0.1:8000/ and you can play with Twissandra!
+
+## Deployment to CloudFoundry
+
+The application is CloudFoundry-ready. Checkout the code and push it:
+
+    git clone git://github.com/twissandra/twissandra.git
+    cd twissandra
+    cf create-service docker cassandra cassandra-1
+    cf push twissandra -b https://github.com/cloudfoundry/buildpack-python.git
+    cf bind-service twissandra cassandra-1
+    cf restart twissandra
+
+The example uses Cassandra service plan of CloudFoundry [Docker Broker](https://github.com/arkadijs/cf-docker-broker)
+but you may use any Cassandra service, like [Pivotal's Cassandra](http://docs.pivotal.io/p1-services/Cassandra.html),
+assuming it is bound to the application and appears in VCAP_SERVICES.
 
 ## Schema Layout
 
